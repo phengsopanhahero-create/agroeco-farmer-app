@@ -23,20 +23,65 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check active session
-    const session = supabase.auth.getSession();
-    session.then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    // Listen for auth changes
+    // Listen for auth changes first so we don't miss events
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       setLoading(false);
     });
+
+    const init = async () => {
+      // If running inside Telegram Mini App, auto-sign-in with Telegram identity
+      const isTelegram =
+        typeof window !== "undefined" &&
+        typeof (window as any).Telegram?.WebApp?.initData === "string" &&
+        (window as any).Telegram.WebApp.initData.length > 0;
+
+      if (isTelegram) {
+        const initData = (window as any).Telegram.WebApp.initData;
+
+        // Check if we already have an active session to avoid redundant calls
+        const { data: { session: existingSession } } = await supabase.auth.getSession();
+        if (existingSession) {
+          setUser(existingSession.user);
+          setLoading(false);
+          return;
+        }
+
+        try {
+          const res = await fetch("/api/auth/telegram", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ initData }),
+          });
+
+          if (res.ok) {
+            const { session } = await res.json();
+            if (session) {
+              await supabase.auth.setSession({
+                access_token: session.access_token,
+                refresh_token: session.refresh_token,
+              });
+              // onAuthStateChange above will set the user
+              return;
+            }
+          }
+        } catch (e) {
+          console.error("Telegram auto-login failed:", e);
+        }
+
+        setLoading(false);
+        return;
+      }
+
+      // Normal (non-Telegram) flow: check existing session
+      const { data: { session } } = await supabase.auth.getSession();
+      setUser(session?.user ?? null);
+      setLoading(false);
+    };
+
+    init();
 
     return () => {
       subscription.unsubscribe();

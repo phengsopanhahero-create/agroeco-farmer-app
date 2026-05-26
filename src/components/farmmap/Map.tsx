@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useTranslations } from "@/lib/i18n";
 import MapLoader from "./MapLoader";
+import { loadGoogleMaps } from "@/lib/googleMaps";
 
 const FILTER_MAP: Record<string, string[]> = {
   ទាំងអស់: [
@@ -93,10 +94,9 @@ const Map: React.FC<MapProps> = ({
     if (!mapRef.current) return;
 
     let mounted = true;
-    let createdScript: HTMLScriptElement | null = null;
 
-    const initMap = async () => {
-      if (!mounted || !mapRef.current || !window.google?.maps) return;
+    loadGoogleMaps().then(() => {
+      if (!mounted || !mapRef.current) return;
 
       mapInstance.current = new window.google.maps.Map(mapRef.current, {
         center: { lat: 12.5657, lng: 104.991 },
@@ -104,31 +104,21 @@ const Map: React.FC<MapProps> = ({
         disableDefaultUI: true,
       });
 
-      await fetchFarms();
-    };
-
-    if (window.google?.maps) {
-      initMap();
-    } else {
-      const script = document.createElement("script");
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places`;
-      script.async = true;
-      script.defer = true;
-      script.onload = () => initMap();
-      document.head.appendChild(script);
-      createdScript = script;
-    }
+      fetchFarms();
+    });
 
     return () => {
       mounted = false;
-      if (createdScript?.parentNode) {
-        createdScript.parentNode.removeChild(createdScript);
-      }
     };
   }, []);
 
   useEffect(() => {
-    if (!mapInstance.current || farms.length === 0) return;
+    if (
+      !mapInstance.current ||
+      !(mapInstance.current instanceof window.google?.maps?.Map) ||
+      farms.length === 0
+    )
+      return;
 
     console.log("=== MAP FILTERING DEBUG ===");
     console.log("Farms:", farms);
