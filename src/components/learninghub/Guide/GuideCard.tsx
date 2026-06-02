@@ -45,11 +45,13 @@ const GuideCard: React.FC<Guide> = (props) => {
   return (
     <motion.div
       className="
-        rounded-lg border border-[#EBECF0] bg-white overflow-hidden 
+        rounded-lg border border-[#EBECF0] bg-white overflow-hidden
         mx-auto font-[Kantumruy_Pro]
         w-full
         max-w-[360px] sm:max-w-[420px] md:max-w-[500px] lg:max-w-[420px]
+        cursor-pointer
       "
+      onClick={handleReadGuide}
       initial={{ opacity: 0, y: 40 }}
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ scale: 1.02 }}
@@ -137,7 +139,7 @@ const GuideCard: React.FC<Guide> = (props) => {
         <div className="flex items-center justify-between gap-2 mt-2">
           {/* Save Button */}
           <motion.button
-            onClick={() => toggleGuide(props)}
+            onClick={(e) => { e.stopPropagation(); toggleGuide(props); }}
             className={`
               flex items-center justify-center 
               w-[48px] sm:w-[52px] md:w-[56px] 
@@ -161,7 +163,7 @@ const GuideCard: React.FC<Guide> = (props) => {
 
           {/* Read Button */}
           <motion.button
-            onClick={handleReadGuide}
+            onClick={(e) => { e.stopPropagation(); handleReadGuide(); }}
             className="
               items-center
               rounded-lg bg-[#0E4123] text-white font-medium

@@ -41,11 +41,12 @@ export const StoriesCard: React.FC<Story> = (props) => {
     >
       <div
         className="
-          rounded-lg border border-[#EBECF0] bg-white overflow-hidden 
-          w-full 
+          rounded-lg border border-[#EBECF0] bg-white overflow-hidden
+          w-full
           max-w-[360px] sm:max-w-[420px] md:max-w-[500px] lg:max-w-[420px]
-          font-[Kantumruy_Pro]
+          font-[Kantumruy_Pro] cursor-pointer
         "
+        onClick={goToDetail}
       >
         {/* IMAGE */}
         <div
@@ -131,7 +132,7 @@ export const StoriesCard: React.FC<Story> = (props) => {
           <div className="flex items-center justify-between gap-2 mt-2">
             {/* Save Button */}
             <motion.button
-              onClick={() => toggleStory(props)}
+              onClick={(e) => { e.stopPropagation(); toggleStory(props); }}
               className={`
                 flex items-center justify-center
                 w-[46px] sm:w-[52px] md:w-[56px]
@@ -153,7 +154,7 @@ export const StoriesCard: React.FC<Story> = (props) => {
 
             {/* Read Story */}
             <motion.button
-              onClick={goToDetail}
+              onClick={(e) => { e.stopPropagation(); goToDetail(); }}
               className="
                 items-center rounded-lg bg-[#0E4123] text-white font-medium
                 w-full h-[34px] sm:h-[36px]
