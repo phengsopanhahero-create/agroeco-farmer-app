@@ -10,7 +10,7 @@ import Link from "next/link";
 import { useTranslations } from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/context/AuthContext"; // Make sure you have this context
+import { useAuth } from "@/context/AuthContext";
 
 export default function LoginPage() {
   const { t, lang, setLang } = useTranslations();
@@ -19,16 +19,21 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [isMounted, setIsMounted] = useState(false);
+  const [isTelegram, setIsTelegram] = useState(false);
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
 
   useEffect(() => {
     setIsMounted(true);
+    const tg = (window as any).Telegram?.WebApp;
+    if (tg?.initData) {
+      setIsTelegram(true);
+    }
   }, []);
 
   // Auto-login when inside Telegram Mini App
   useEffect(() => {
-    if (!isMounted) return;
+    if (!isMounted || !isTelegram) return;
     const tg = (window as any).Telegram?.WebApp;
     if (!tg?.initData) return;
 
@@ -55,14 +60,14 @@ export default function LoginPage() {
         setError("Telegram login failed");
         setLoading(false);
       });
-  }, [isMounted]);
+  }, [isMounted, isTelegram]);
 
   // Redirect if user is already logged in
   useEffect(() => {
-    if (user) {
+    if (!authLoading && user) {
       router.push("/");
     }
-  }, [user, router]);
+  }, [user, authLoading, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -87,8 +92,6 @@ export default function LoginPage() {
       }
 
       if (data.user) {
-        console.log("Login successful:", data.user);
-        // The AuthContext will automatically update the user state
         router.push("/");
       }
     } catch (error: any) {
@@ -104,29 +107,11 @@ export default function LoginPage() {
     }
   };
 
-  const isTelegram = isMounted && !!(window as any).Telegram?.WebApp?.initData;
-
-  // Show loading state until mounted or when inside Telegram (auto-login in progress)
-  if (!isMounted || isTelegram) {
+  // Show spinner while: not yet mounted, auth session is loading, inside Telegram (auto-login), or already logged in
+  if (!isMounted || authLoading || isTelegram || user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
         <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-green-600"></div>
-      </div>
-    );
-  }
-
-  // Don't show login page if user is already logged in
-  if (user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-        <div className="text-center">
-          <p className="text-gray-600">
-            {lang === "kh"
-              ? "កំពុងបញ្ជូនទៅផ្ទាំងគ្រប់គ្រង..."
-              : "Redirecting to dashboard..."}
-          </p>
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mt-4"></div>
-        </div>
       </div>
     );
   }
