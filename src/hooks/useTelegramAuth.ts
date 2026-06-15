@@ -10,8 +10,20 @@ export type TelegramUser = {
   language_code?: string;
 };
 
+function getTelegramUserSync(): TelegramUser | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const user = (window as any).Telegram?.WebApp?.initDataUnsafe?.user;
+    return user ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export function useTelegramUser() {
-  const [tgUser, setTgUser] = useState<TelegramUser | null>(null);
+  const [tgUser, setTgUser] = useState<TelegramUser | null>(() =>
+    getTelegramUserSync()
+  );
 
   useEffect(() => {
     WebApp.ready();

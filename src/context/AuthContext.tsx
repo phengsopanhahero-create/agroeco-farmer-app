@@ -8,9 +8,20 @@ import {
 import { User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 
+function detectTelegram(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    const tg = (window as any).Telegram?.WebApp;
+    return !!(tg?.initData && tg.initData.length > 0);
+  } catch {
+    return false;
+  }
+}
+
 type AuthContextType = {
   user: User | null;
   loading: boolean;
+  isTelegram: boolean;
   login: (email: string, password: string) => Promise<{ error: any }>;
   signup: (email: string, password: string) => Promise<{ error: any }>;
   logout: () => Promise<void>;
@@ -20,9 +31,12 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [isTelegram] = useState<boolean>(() => detectTelegram());
+  const [loading, setLoading] = useState(!detectTelegram());
 
   useEffect(() => {
+    if (isTelegram) return;
+
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user ?? null);
       setLoading(false);
@@ -38,7 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [isTelegram]);
 
   const login = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
@@ -63,6 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value: AuthContextType = {
     user,
     loading,
+    isTelegram,
     login,
     logout,
     signup,

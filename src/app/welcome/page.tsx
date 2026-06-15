@@ -47,7 +47,7 @@ interface NewsItem {
 
 export default function WelcomePage() {
   const { t, lang } = useTranslations();
-  const { user, loading } = useAuth();
+  const { user, loading, isTelegram } = useAuth();
   const router = useRouter();
   const [highlights, setHighlights] = useState<Highlight[]>([]);
   const [news, setNews] = useState<NewsItem[]>([]);
@@ -77,10 +77,10 @@ export default function WelcomePage() {
   };
 
   useEffect(() => {
-    if (!loading && user) {
+    if (!loading && (user || isTelegram)) {
       router.push("/");
     }
-  }, [user, loading, router]);
+  }, [user, loading, isTelegram, router]);
 
   useEffect(() => {
     async function loadHighlights() {

@@ -17,7 +17,7 @@ const publicRoutes = [
 const publicPrefixes = ["/knowledge"];
 
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { user, loading } = useAuth();
+  const { user, loading, isTelegram } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -25,13 +25,15 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
     publicRoutes.includes(pathname) ||
     publicPrefixes.some((p) => pathname.startsWith(p));
 
+  const isAuthed = isTelegram || !!user;
+
   useEffect(() => {
-    if (!loading && user === null && !isPublic) {
+    if (!loading && !isAuthed && !isPublic) {
       router.push("/welcome");
     }
-  }, [user, loading, isPublic, router]);
+  }, [isAuthed, loading, isPublic, router]);
 
-  if (loading || (user === null && !isPublic)) {
+  if (loading || (!isAuthed && !isPublic)) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-green-600"></div>
