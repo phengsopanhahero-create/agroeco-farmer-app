@@ -32,11 +32,9 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isTelegram] = useState<boolean>(() => detectTelegram());
-  const [loading, setLoading] = useState(!detectTelegram());
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (isTelegram) return;
-
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user ?? null);
       setLoading(false);
@@ -52,7 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       subscription.unsubscribe();
     };
-  }, [isTelegram]);
+  }, []);
 
   const login = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({

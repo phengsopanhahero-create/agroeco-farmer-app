@@ -17,7 +17,7 @@ const publicRoutes = [
 const publicPrefixes = ["/knowledge"];
 
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { user, loading, isTelegram } = useAuth();
+  const { user, loading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -25,7 +25,7 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
     publicRoutes.includes(pathname) ||
     publicPrefixes.some((p) => pathname.startsWith(p));
 
-  const isAuthed = isTelegram || !!user;
+  const isAuthed = !!user;
 
   useEffect(() => {
     if (!loading && !isAuthed && !isPublic) {

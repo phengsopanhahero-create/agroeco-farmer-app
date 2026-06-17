@@ -47,7 +47,7 @@ interface NewsItem {
 
 export default function WelcomePage() {
   const { t, lang } = useTranslations();
-  const { user, loading, isTelegram } = useAuth();
+  const { user, loading } = useAuth();
   const router = useRouter();
   const [highlights, setHighlights] = useState<Highlight[]>([]);
   const [news, setNews] = useState<NewsItem[]>([]);
@@ -56,6 +56,29 @@ export default function WelcomePage() {
   const handleSeeMore = () => {
     router.push("/auth/login");
   };
+
+  // Silently authenticate Telegram users in the background so the
+  // welcome page can still be shown first without blocking on login.
+  useEffect(() => {
+    if (loading || user) return;
+    const tg = (window as any).Telegram?.WebApp;
+    if (!tg?.initData) return;
+
+    fetch("/api/auth/telegram", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ initData: tg.initData }),
+    })
+      .then((r) => r.json())
+      .then(async ({ session, error: err }) => {
+        if (err || !session) return;
+        await supabase.auth.setSession({
+          access_token: session.access_token,
+          refresh_token: session.refresh_token,
+        });
+      })
+      .catch(() => {});
+  }, [loading, user]);
 
   const scrollHighlights = (direction: "left" | "right") => {
     const container = scrollRef.current;
@@ -77,10 +100,10 @@ export default function WelcomePage() {
   };
 
   useEffect(() => {
-    if (!loading && (user || isTelegram)) {
+    if (!loading && user) {
       router.push("/");
     }
-  }, [user, loading, isTelegram, router]);
+  }, [user, loading, router]);
 
   useEffect(() => {
     async function loadHighlights() {
