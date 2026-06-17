@@ -43,7 +43,11 @@ export async function getLocation(): Promise<LocationData> {
           error: err.message,
           loading: false,
         });
-      }
+      },
+      // Telegram's in-app WebView (especially iOS) can fail to surface the
+      // permission prompt at all, in which case neither callback above
+      // ever fires. A timeout guarantees this promise still resolves.
+      { timeout: 10000 }
     );
   });
 }

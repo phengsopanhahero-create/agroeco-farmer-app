@@ -69,6 +69,14 @@ export async function POST(req: NextRequest) {
 
     const admin = getServiceSupabase();
 
+    const tgMetadata = {
+      telegram_id: telegramId,
+      first_name: tgUser.first_name || "",
+      last_name: tgUser.last_name || "",
+      username: tgUser.username || "",
+      photo_url: tgUser.photo_url || "",
+    };
+
     // 1. Try login first
     const { data: loginData, error: loginError } =
       await admin.auth.signInWithPassword({
@@ -77,8 +85,16 @@ export async function POST(req: NextRequest) {
       });
 
     if (!loginError && loginData.session) {
+      // Keep metadata (name, photo, username) fresh on every login, since
+      // Telegram users can change these and we only set them at creation
+      // otherwise.
+      const { data: updateData } = await admin.auth.admin.updateUserById(
+        loginData.user.id,
+        { user_metadata: tgMetadata }
+      );
+
       return NextResponse.json({
-        user: loginData.user,
+        user: updateData?.user ?? loginData.user,
         session: loginData.session,
       });
     }
@@ -88,13 +104,7 @@ export async function POST(req: NextRequest) {
       email,
       password,
       email_confirm: true,
-      user_metadata: {
-        telegram_id: telegramId,
-        first_name: tgUser.first_name || "",
-        last_name: tgUser.last_name || "",
-        username: tgUser.username || "",
-        photo_url: tgUser.photo_url || "",
-      },
+      user_metadata: tgMetadata,
     });
 
     // Ignore duplicate user error

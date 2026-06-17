@@ -62,6 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ initData: tg?.initData }),
+            signal: AbortSignal.timeout(10000),
           });
           const { session, error } = await res.json();
           if (!error && session) {
